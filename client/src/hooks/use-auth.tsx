@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -8,14 +8,17 @@ import { User as SelectUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { signInWithGoogle, signOutUser, auth } from "@/lib/firebase";
+import { onAuthStateChanged, User as FirebaseUser, getIdToken } from "firebase/auth";
 
 type AuthContextType = {
-  user: SelectUser | null;
+  user: Partial<SelectUser> | null;
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<Omit<SelectUser, "password">, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<Omit<SelectUser, "password">, Error, RegisterData>;
+  signInWithGoogleMutation: UseMutationResult<void, Error, void>;
 };
 
 export const loginSchema = z.object({
@@ -45,9 +48,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
+    refetch: refetchUser
   } = useQuery<Omit<SelectUser, "password"> | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+
+  // Listen to Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Get the Firebase ID token
+          const idToken = await firebaseUser.getIdToken();
+          
+          // Use the token to authenticate with our backend
+          await handleFirebaseLogin(idToken);
+        } catch (error) {
+          console.error("Error during Firebase authentication sync:", error);
+        }
+      }
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
+
+  // Handle Firebase login with our backend
+  const handleFirebaseLogin = async (idToken: string) => {
+    try {
+      const res = await apiRequest("POST", "/api/firebase-auth", { idToken });
+      const userData = await res.json();
+      queryClient.setQueryData(["/api/user"], userData);
+      
+      toast({
+        title: "Login successful",
+        description: `Welcome, ${userData.name}!`,
+      });
+    } catch (error) {
+      console.error("Error during Firebase auth with backend:", error);
+      toast({
+        title: "Authentication failed",
+        description: "There was an error with your Google sign-in.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const signInWithGoogleMutation = useMutation({
+    mutationFn: async () => {
+      const firebaseUser = await signInWithGoogle();
+      if (firebaseUser) {
+        const idToken = await firebaseUser.getIdToken();
+        await handleFirebaseLogin(idToken);
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Google Sign-in failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const loginMutation = useMutation({
@@ -94,6 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      // Log out from both Firebase and our backend
+      await signOutUser();
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
@@ -115,12 +179,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
+        user: user as SelectUser | null,
         isLoading,
         error,
         loginMutation,
         logoutMutation,
         registerMutation,
+        signInWithGoogleMutation,
       }}
     >
       {children}

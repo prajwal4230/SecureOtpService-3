@@ -3,6 +3,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
 import { desc, eq, and, not } from "drizzle-orm";
+import { Store } from "express-session";
 
 // Create a PostgreSQL session store
 const PostgresSessionStore = connectPg(session);
@@ -24,11 +25,11 @@ export interface IStorage {
   getActiveOtpByUserAndApp(userId: number, appName: string): Promise<OTP | undefined>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 

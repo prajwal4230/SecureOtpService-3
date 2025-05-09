@@ -7,6 +7,14 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { insertUserSchema, User as SelectUser } from "@shared/schema";
 import { z } from "zod";
+import admin from "firebase-admin";
+
+// Initialize Firebase Admin (server-side validation)
+if (!admin.apps?.length) {
+  admin.initializeApp({
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  });
+}
 
 declare global {
   namespace Express {
@@ -86,6 +94,56 @@ export function setupAuth(app: Express) {
     path: ["confirmPassword"],
   });
   
+  // Firebase token schema
+  const firebaseAuthSchema = z.object({
+    idToken: z.string().min(1, "Firebase ID token is required"),
+  });
+  
+  // Firebase authentication endpoint
+  app.post("/api/firebase-auth", async (req, res, next) => {
+    try {
+      const result = firebaseAuthSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: result.error.errors 
+        });
+      }
+      
+      const { idToken } = result.data;
+      
+      // Verify Firebase token
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      const { uid, email, name, picture } = decodedToken;
+      
+      // Find or create user in our database
+      let user = await storage.getUserByUsername(email || uid);
+      
+      if (!user) {
+        // Create new user with Firebase info
+        const displayName = name || email?.split('@')[0] || 'User';
+        
+        user = await storage.createUser({
+          username: email || uid,
+          name: displayName,
+          password: await hashPassword(randomBytes(16).toString('hex')), // Random password for Firebase users
+        });
+      }
+      
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) return next(err);
+        
+        // Don't return the password hash to the client
+        const { password, ...userWithoutPassword } = user;
+        res.status(200).json(userWithoutPassword);
+      });
+    } catch (error) {
+      console.error('Firebase auth error:', error);
+      res.status(401).json({ message: "Invalid or expired Firebase token" });
+    }
+  });
+  
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
@@ -123,13 +181,13 @@ export function setupAuth(app: Express) {
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
-      req.login(user, (err) => {
+      req.login(user, (err: any) => {
         if (err) return next(err);
         
         // Don't return the password hash to the client
@@ -141,7 +199,7 @@ export function setupAuth(app: Express) {
 
   // Logout endpoint
   app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
+    req.logout((err: any) => {
       if (err) return next(err);
       res.sendStatus(200);
     });
