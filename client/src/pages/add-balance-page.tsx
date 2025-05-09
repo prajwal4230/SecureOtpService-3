@@ -104,7 +104,7 @@ export default function AddBalancePage() {
             <div className="flex items-center">
               <div className="px-3 py-1.5 bg-neutral-100 rounded-md flex items-center">
                 <span className="text-sm text-neutral-500 mr-1">Balance:</span>
-                <span className="font-medium text-neutral-800">₹{user.walletBalance.toFixed(2)}</span>
+                <span className="font-medium text-neutral-800">₹{user.walletBalance?.toFixed(2) || '0.00'}</span>
               </div>
             </div>
           </div>
@@ -153,10 +153,14 @@ export default function AddBalancePage() {
                       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <TabsContent value="qrcode" className="mt-0">
                           <div className="flex flex-col items-center">
-                            {/* QR Code Placeholder */}
+                            {/* QR Code */}
                             <div className="bg-white p-3 border border-neutral-300 rounded-lg mb-4">
-                              <div className="h-64 w-64 flex items-center justify-center bg-neutral-100">
-                                <QrCode className="h-16 w-16 text-neutral-400" />
+                              <div className="h-64 w-64 flex items-center justify-center">
+                                <img 
+                                  src="/assets/upi_qr_code.jpg" 
+                                  alt="UPI QR Code" 
+                                  className="h-full w-full object-contain" 
+                                />
                               </div>
                             </div>
                             <p className="text-sm text-neutral-600 mb-6 max-w-sm text-center">
@@ -168,13 +172,13 @@ export default function AddBalancePage() {
                         <TabsContent value="upi" className="mt-0">
                           <div className="flex flex-col items-center mb-6">
                             <div className="bg-neutral-100 px-6 py-4 rounded-lg mb-4 w-full sm:w-auto">
-                              <span className="font-mono text-lg font-medium text-neutral-800">rocksotp@upi</span>
+                              <span className="font-mono text-lg font-medium text-neutral-800">Ganeshraut4230@oksbi</span>
                             </div>
                             <Button 
                               variant="ghost" 
                               size="sm" 
                               className="text-primary flex items-center text-sm"
-                              onClick={() => copyToClipboard("rocksotp@upi")}
+                              onClick={() => copyToClipboard("Ganeshraut4230@oksbi")}
                             >
                               <Copy className="h-4 w-4 mr-1" />
                               Copy UPI ID
