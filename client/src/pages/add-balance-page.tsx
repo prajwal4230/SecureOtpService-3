@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, QrCode, Copy, CreditCard, AlertCircle, Loader2 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ArrowLeft, QrCode, Copy, CreditCard, AlertCircle, Loader2, Clock } from "lucide-react";
+import { useBalanceRequests } from "@/hooks/use-balance-requests";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -48,31 +47,13 @@ export default function AddBalancePage() {
     },
   });
   
-  const addBalanceMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      const res = await apiRequest("POST", "/api/add-balance", values);
-      return await res.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Balance added successfully",
-        description: `₹${data.transaction.amount.toFixed(2)} has been added to your wallet.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-      navigate("/dashboard");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to add balance",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const { createBalanceRequestMutation, userBalanceRequestsQuery } = useBalanceRequests();
   
   function onSubmit(values: z.infer<typeof formSchema>) {
-    addBalanceMutation.mutate(values);
+    createBalanceRequestMutation.mutate({
+      amount: Number(values.amount),
+      utrNumber: values.utrNumber
+    });
   }
 
   if (!user) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -223,23 +204,41 @@ export default function AddBalancePage() {
                           )}
                         />
 
-                        <Button 
-                          type="submit" 
-                          className="w-full"
-                          disabled={addBalanceMutation.isPending}
-                        >
-                          {addBalanceMutation.isPending ? (
-                            <>
-                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Verifying Payment...
-                            </>
-                          ) : (
-                            "Verify Payment"
-                          )}
-                        </Button>
+                        <div className="space-y-4">
+                          <Button 
+                            type="submit" 
+                            className="w-full"
+                            disabled={createBalanceRequestMutation.isPending}
+                          >
+                            {createBalanceRequestMutation.isPending ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Submitting Request...
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="mr-2 h-4 w-4" />
+                                Submit Balance Request
+                              </>
+                            )}
+                          </Button>
+                          
+                          <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                            <div className="flex">
+                              <div className="flex-shrink-0">
+                                <Clock className="h-5 w-5 text-blue-400" />
+                              </div>
+                              <div className="ml-3">
+                                <p className="text-sm text-blue-700">
+                                  Your balance request will be reviewed by an administrator. This process usually takes less than 24 hours.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </form>
                     </Form>
                   </Tabs>

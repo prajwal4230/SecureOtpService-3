@@ -10,6 +10,7 @@ import GetOTPsPage from "@/pages/get-otps-page";
 import CheckOTPPage from "@/pages/check-otp-page";
 import SupportPage from "@/pages/support-page";
 import TermsPage from "@/pages/terms-page";
+import AdminPage from "@/pages/admin-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 
@@ -23,6 +24,7 @@ const WrappedGetOTPsPage = () => <GetOTPsPage />;
 const WrappedCheckOTPPage = () => <CheckOTPPage />;
 const WrappedSupportPage = () => <SupportPage />;
 const WrappedTermsPage = () => <TermsPage />;
+const WrappedAdminPage = () => <AdminPage />;
 
 function Router() {
   return (
@@ -35,6 +37,7 @@ function Router() {
       <ProtectedRoute path="/get-otps" component={WrappedGetOTPsPage} />
       <ProtectedRoute path="/check-otp" component={WrappedCheckOTPPage} />
       <ProtectedRoute path="/support" component={WrappedSupportPage} />
+      <ProtectedRoute path="/admin" component={WrappedAdminPage} />
       <Route component={WrappedNotFound} />
     </Switch>
   );

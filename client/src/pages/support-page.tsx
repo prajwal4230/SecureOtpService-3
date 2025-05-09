@@ -69,7 +69,7 @@ export default function SupportPage() {
             <div className="flex items-center">
               <div className="px-3 py-1.5 bg-neutral-100 rounded-md flex items-center">
                 <span className="text-sm text-neutral-500 mr-1">Balance:</span>
-                <span className="font-medium text-neutral-800">₹{user.walletBalance.toFixed(2)}</span>
+                <span className="font-medium text-neutral-800">₹{user.walletBalance?.toFixed(2) || '0.00'}</span>
               </div>
             </div>
           </div>
@@ -106,8 +106,13 @@ export default function SupportPage() {
                         <p className="mt-2 text-neutral-600 text-center">
                           Fast responses, available 24/7
                         </p>
-                        <a href="#" className="mt-4 flex items-center text-primary font-medium">
-                          @rocksotp
+                        <a 
+                          href="https://t.me/alltypesofsellerbotofficial" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="mt-4 flex items-center text-primary font-medium"
+                        >
+                          @alltypesofsellerbotofficial
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
@@ -123,8 +128,13 @@ export default function SupportPage() {
                         <p className="mt-2 text-neutral-600 text-center">
                           Follow us for updates and support
                         </p>
-                        <a href="#" className="mt-4 flex items-center text-primary font-medium">
-                          @rocksotp
+                        <a 
+                          href="https://www.instagram.com/all_types_of_seller?igsh=YzljYTk1ODg3Zg==" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="mt-4 flex items-center text-primary font-medium"
+                        >
+                          @all_types_of_seller
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
