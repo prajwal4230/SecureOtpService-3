@@ -64,7 +64,9 @@ export default function CheckOTPPage() {
     refetchInterval: otpData ? false : 2000, // Refetch until we get data
   });
 
-  if (!user) return null;
+  if (!user) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>;
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">

@@ -61,7 +61,9 @@ export default function GetOTPsPage() {
     requestOtpMutation.mutate({ appName, price });
   };
 
-  if (!user) return null;
+  if (!user) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>;
 
   return (
     <div className="min-h-screen bg-neutral-50">

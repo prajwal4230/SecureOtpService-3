@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, QrCode, Copy, CreditCard, AlertCircle } from "lucide-react";
+import { ArrowLeft, QrCode, Copy, CreditCard, AlertCircle, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -75,7 +75,9 @@ export default function AddBalancePage() {
     addBalanceMutation.mutate(values);
   }
 
-  if (!user) return null;
+  if (!user) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
