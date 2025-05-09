@@ -85,6 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome, ${userData.name}!`,
       });
+      
+      // Redirect to dashboard after successful authentication
+      window.location.href = "/dashboard";
     } catch (error) {
       console.error("Error during Firebase auth with backend:", error);
       toast({
