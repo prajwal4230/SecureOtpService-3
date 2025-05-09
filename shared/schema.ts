@@ -8,12 +8,31 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   walletBalance: doublePrecision("wallet_balance").notNull().default(0),
+  isAdmin: boolean("is_admin").notNull().default(false),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   name: true,
+});
+
+export const balanceRequests = pgTable("balance_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  amount: doublePrecision("amount").notNull(),
+  utrNumber: text("utr_number").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  status: text("status").notNull().default('pending'), // 'pending', 'approved', 'rejected'
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+});
+
+export const insertBalanceRequestSchema = createInsertSchema(balanceRequests).pick({
+  userId: true,
+  amount: true,
+  utrNumber: true,
 });
 
 export const transactions = pgTable("transactions", {
@@ -25,6 +44,7 @@ export const transactions = pgTable("transactions", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   appName: text("app_name"), // only for OTP transactions
   utrNumber: text("utr_number"), // only for deposit transactions
+  balanceRequestId: integer("balance_request_id").references(() => balanceRequests.id),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).pick({
@@ -34,6 +54,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   description: true,
   appName: true,
   utrNumber: true,
+  balanceRequestId: true,
 });
 
 export const otps = pgTable("otps", {
@@ -57,3 +78,5 @@ export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type OTP = typeof otps.$inferSelect;
 export type InsertOTP = z.infer<typeof insertOtpSchema>;
+export type BalanceRequest = typeof balanceRequests.$inferSelect;
+export type InsertBalanceRequest = z.infer<typeof insertBalanceRequestSchema>;

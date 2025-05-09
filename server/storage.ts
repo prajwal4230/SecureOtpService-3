@@ -1,8 +1,13 @@
-import { users, type User, type InsertUser, transactions, type Transaction, type InsertTransaction, otps, type OTP, type InsertOTP } from "@shared/schema";
+import { 
+  users, type User, type InsertUser, 
+  transactions, type Transaction, type InsertTransaction, 
+  otps, type OTP, type InsertOTP,
+  balanceRequests, type BalanceRequest, type InsertBalanceRequest
+} from "@shared/schema";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { desc, eq, and, not } from "drizzle-orm";
+import { desc, eq, and, not, ne, sql } from "drizzle-orm";
 import { Store } from "express-session";
 
 // Create a PostgreSQL session store
@@ -14,6 +19,16 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: number, newBalance: number): Promise<User>;
+  getAllAdmins(): Promise<User[]>;
+  setUserAsAdmin(userId: number, isAdmin: boolean): Promise<User>;
+  
+  // Balance request operations
+  createBalanceRequest(request: InsertBalanceRequest): Promise<BalanceRequest>;
+  getAllBalanceRequests(): Promise<BalanceRequest[]>;
+  getPendingBalanceRequests(): Promise<BalanceRequest[]>;
+  getBalanceRequestsByUser(userId: number): Promise<BalanceRequest[]>;
+  approveBalanceRequest(requestId: number, adminId: number): Promise<BalanceRequest>;
+  rejectBalanceRequest(requestId: number, adminId: number, reason: string): Promise<BalanceRequest>;
   
   // Transaction operations
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
@@ -114,6 +129,161 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(otps.timestamp))
       .limit(1);
+    
+    return result[0];
+  }
+
+  // Admin methods
+  async getAllAdmins(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.isAdmin, true));
+  }
+
+  async setUserAsAdmin(userId: number, isAdmin: boolean): Promise<User> {
+    const result = await db
+      .update(users)
+      .set({ isAdmin })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!result[0]) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    return result[0];
+  }
+
+  // Balance request methods
+  async createBalanceRequest(request: InsertBalanceRequest): Promise<BalanceRequest> {
+    const result = await db
+      .insert(balanceRequests)
+      .values(request)
+      .returning();
+    
+    return result[0];
+  }
+
+  async getAllBalanceRequests(): Promise<BalanceRequest[]> {
+    return await db
+      .select()
+      .from(balanceRequests)
+      .orderBy(desc(balanceRequests.timestamp));
+  }
+
+  async getPendingBalanceRequests(): Promise<BalanceRequest[]> {
+    return await db
+      .select()
+      .from(balanceRequests)
+      .where(eq(balanceRequests.status, 'pending'))
+      .orderBy(desc(balanceRequests.timestamp));
+  }
+
+  async getBalanceRequestsByUser(userId: number): Promise<BalanceRequest[]> {
+    return await db
+      .select()
+      .from(balanceRequests)
+      .where(eq(balanceRequests.userId, userId))
+      .orderBy(desc(balanceRequests.timestamp));
+  }
+
+  async approveBalanceRequest(requestId: number, adminId: number): Promise<BalanceRequest> {
+    // First get the request to check its status
+    const requestsResult = await db
+      .select()
+      .from(balanceRequests)
+      .where(eq(balanceRequests.id, requestId));
+    
+    if (!requestsResult[0]) {
+      throw new Error(`Balance request with ID ${requestId} not found`);
+    }
+    
+    const request = requestsResult[0];
+    
+    if (request.status !== 'pending') {
+      throw new Error(`Balance request with ID ${requestId} is already ${request.status}`);
+    }
+    
+    // Update the request status to approved
+    const now = new Date();
+    const result = await db
+      .update(balanceRequests)
+      .set({ 
+        status: 'approved',
+        approvedBy: adminId,
+        approvedAt: now
+      })
+      .where(eq(balanceRequests.id, requestId))
+      .returning();
+    
+    if (!result[0]) {
+      throw new Error(`Failed to approve balance request with ID ${requestId}`);
+    }
+    
+    // Get the user
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, request.userId));
+    
+    if (!userResult[0]) {
+      throw new Error(`User with ID ${request.userId} not found`);
+    }
+    
+    const user = userResult[0];
+    
+    // Add the amount to the user's wallet
+    const newBalance = user.walletBalance + request.amount;
+    await this.updateUserBalance(user.id, newBalance);
+    
+    // Create a transaction record
+    await this.createTransaction({
+      userId: user.id,
+      type: 'deposit',
+      amount: request.amount,
+      description: 'Wallet Deposit (Approved)',
+      utrNumber: request.utrNumber,
+      appName: null,
+      balanceRequestId: requestId
+    });
+    
+    return result[0];
+  }
+
+  async rejectBalanceRequest(requestId: number, adminId: number, reason: string): Promise<BalanceRequest> {
+    // First get the request to check its status
+    const requestsResult = await db
+      .select()
+      .from(balanceRequests)
+      .where(eq(balanceRequests.id, requestId));
+    
+    if (!requestsResult[0]) {
+      throw new Error(`Balance request with ID ${requestId} not found`);
+    }
+    
+    const request = requestsResult[0];
+    
+    if (request.status !== 'pending') {
+      throw new Error(`Balance request with ID ${requestId} is already ${request.status}`);
+    }
+    
+    // Update the request status to rejected
+    const now = new Date();
+    const result = await db
+      .update(balanceRequests)
+      .set({ 
+        status: 'rejected',
+        approvedBy: adminId,
+        approvedAt: now,
+        rejectionReason: reason
+      })
+      .where(eq(balanceRequests.id, requestId))
+      .returning();
+    
+    if (!result[0]) {
+      throw new Error(`Failed to reject balance request with ID ${requestId}`);
+    }
     
     return result[0];
   }
