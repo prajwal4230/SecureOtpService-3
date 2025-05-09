@@ -12,19 +12,32 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useAuth, loginSchema, registerSchema } from "@/hooks/use-auth";
+import { loginSchema, registerSchema } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Link, useLocation } from "wouter";
 import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { AuthContext } from "@/hooks/use-auth";
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
-  const { loginMutation, registerMutation, user, signInWithGoogleMutation } = useAuth();
+  // Access AuthContext directly to avoid circular dependencies
+  const authContext = useContext(AuthContext);
+  
+  if (!authContext) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-4 animate-spin text-primary" />
+        <span className="ml-2">Loading authentication...</span>
+      </div>
+    );
+  }
+  
+  const { loginMutation, registerMutation, user, signInWithGoogleMutation } = authContext;
   const [_, navigate] = useLocation();
   
   // If the user is already logged in, redirect to the dashboard
@@ -127,7 +140,11 @@ interface FormProps {
 }
 
 function LoginForm({ setActiveTab }: FormProps) {
-  const { loginMutation } = useAuth();
+  const authContext = useContext(AuthContext);
+  if (!authContext) {
+    return <div>Loading authentication...</div>;
+  }
+  const { loginMutation } = authContext;
   
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -223,7 +240,11 @@ function LoginForm({ setActiveTab }: FormProps) {
 }
 
 function SignupForm({ setActiveTab }: FormProps) {
-  const { registerMutation } = useAuth();
+  const authContext = useContext(AuthContext);
+  if (!authContext) {
+    return <div>Loading authentication...</div>;
+  }
+  const { registerMutation } = authContext;
   
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),

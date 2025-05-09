@@ -10,6 +10,7 @@ import GetOTPsPage from "@/pages/get-otps-page";
 import CheckOTPPage from "@/pages/check-otp-page";
 import SupportPage from "@/pages/support-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import { AuthProvider } from "@/hooks/use-auth";
 
 // Wrap components to ensure they always return an Element (not null)
 const WrappedHomePage = () => <HomePage />;
