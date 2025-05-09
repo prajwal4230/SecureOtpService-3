@@ -11,17 +11,27 @@ import CheckOTPPage from "@/pages/check-otp-page";
 import SupportPage from "@/pages/support-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
+// Wrap components to ensure they always return an Element (not null)
+const WrappedHomePage = () => <HomePage />;
+const WrappedAuthPage = () => <AuthPage />;
+const WrappedNotFound = () => <NotFound />;
+const WrappedDashboardPage = () => <DashboardPage />;
+const WrappedAddBalancePage = () => <AddBalancePage />;
+const WrappedGetOTPsPage = () => <GetOTPsPage />;
+const WrappedCheckOTPPage = () => <CheckOTPPage />;
+const WrappedSupportPage = () => <SupportPage />;
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/add-balance" component={AddBalancePage} />
-      <ProtectedRoute path="/get-otps" component={GetOTPsPage} />
-      <ProtectedRoute path="/check-otp" component={CheckOTPPage} />
-      <ProtectedRoute path="/support" component={SupportPage} />
-      <Route component={NotFound} />
+      <Route path="/" component={WrappedHomePage} />
+      <Route path="/auth" component={WrappedAuthPage} />
+      <ProtectedRoute path="/dashboard" component={WrappedDashboardPage} />
+      <ProtectedRoute path="/add-balance" component={WrappedAddBalancePage} />
+      <ProtectedRoute path="/get-otps" component={WrappedGetOTPsPage} />
+      <ProtectedRoute path="/check-otp" component={WrappedCheckOTPPage} />
+      <ProtectedRoute path="/support" component={WrappedSupportPage} />
+      <Route component={WrappedNotFound} />
     </Switch>
   );
 }

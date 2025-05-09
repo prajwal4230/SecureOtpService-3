@@ -37,8 +37,15 @@ export default function CheckOTPPage() {
     };
   }, []);
   
+  // Define the OTP data type
+  interface OTPData {
+    code: string;
+    timestamp: string;
+    appName: string;
+  }
+  
   // Query for OTP after a delay to simulate processing
-  const { data: otpData, isLoading } = useQuery({
+  const { data: otpData, isLoading } = useQuery<OTPData | null>({
     queryKey: ["/api/active-otp", appName],
     queryFn: async ({ queryKey }) => {
       // Only fetch if we have an app name
@@ -61,7 +68,7 @@ export default function CheckOTPPage() {
       return response.json();
     },
     enabled: !!appName && progress > 30, // Only start querying when progress is above 30%
-    refetchInterval: otpData ? false : 2000, // Refetch until we get data
+    refetchInterval: (data) => data ? false : 2000, // Refetch until we get data
   });
 
   if (!user) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center">

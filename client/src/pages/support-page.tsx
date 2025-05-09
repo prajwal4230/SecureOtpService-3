@@ -11,7 +11,7 @@ import {
   SelectTrigger, 
   SelectValue
 } from "@/components/ui/select";
-import { ArrowLeft, MessageSquare, Instagram, Send } from "lucide-react";
+import { ArrowLeft, MessageSquare, Instagram, Send, Loader2 } from "lucide-react";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
