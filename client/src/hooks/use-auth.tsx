@@ -123,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.name}!`,
       });
+      window.location.href = "/dashboard";
     },
     onError: (error: Error) => {
       toast({
@@ -144,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome to RocksOTPs, ${user.name}!`,
       });
+      window.location.href = "/dashboard";
     },
     onError: (error: Error) => {
       toast({
