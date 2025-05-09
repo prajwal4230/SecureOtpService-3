@@ -90,7 +90,7 @@ export default function AuthPage() {
               </div>
             </div>
             
-            {/* Social Login Buttons */}
+            {/* Google Login Button */}
             <div className="space-y-3 mb-6">
               <Button 
                 variant="outline" 
@@ -110,17 +110,6 @@ export default function AuthPage() {
                 )}
                 {signInWithGoogleMutation.isPending ? "Signing in..." : "Continue with Google"}
               </Button>
-            </div>
-
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <Separator />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
             </div>
 
             {activeTab === "login" ? (
@@ -323,13 +312,9 @@ function SignupForm({ setActiveTab }: FormProps) {
           <Checkbox id="terms" required />
           <label htmlFor="terms" className="ml-2 block text-sm text-neutral-700">
             I agree to the{" "}
-            <a href="#" className="font-medium text-primary hover:text-primary-dark">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a href="#" className="font-medium text-primary hover:text-primary-dark">
-              Privacy Policy
-            </a>
+            <Link href="/terms" className="font-medium text-primary hover:text-primary-dark">
+              Terms and Conditions
+            </Link>
           </label>
         </div>
 
