@@ -1,9 +1,11 @@
 import { users, type User, type InsertUser, transactions, type Transaction, type InsertTransaction, otps, type OTP, type InsertOTP } from "@shared/schema";
-import createMemoryStore from "memorystore";
 import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { db, pool } from "./db";
+import { desc, eq, and, not } from "drizzle-orm";
 
-// Create a memory store for sessions
-const MemoryStore = createMemoryStore(session);
+// Create a PostgreSQL session store
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User operations
@@ -25,101 +27,96 @@ export interface IStorage {
   sessionStore: session.SessionStore;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private transactions: Map<number, Transaction>;
-  private otps: Map<number, OTP>;
-  
+export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
-  private userIdCounter: number;
-  private transactionIdCounter: number;
-  private otpIdCounter: number;
 
   constructor() {
-    this.users = new Map();
-    this.transactions = new Map();
-    this.otps = new Map();
-    this.userIdCounter = 1;
-    this.transactionIdCounter = 1;
-    this.otpIdCounter = 1;
-    
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // 24 hours
+    this.sessionStore = new PostgresSessionStore({ 
+      pool,
+      createTableIfMissing: true 
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const user: User = { 
-      ...insertUser, 
-      id, 
-      walletBalance: 0
-    };
-    this.users.set(id, user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
   }
 
   async updateUserBalance(userId: number, newBalance: number): Promise<User> {
-    const user = await this.getUser(userId);
-    if (!user) {
+    const result = await db
+      .update(users)
+      .set({ walletBalance: newBalance })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!result[0]) {
       throw new Error(`User with ID ${userId} not found`);
     }
     
-    const updatedUser = { ...user, walletBalance: newBalance };
-    this.users.set(userId, updatedUser);
-    return updatedUser;
+    return result[0];
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const id = this.transactionIdCounter++;
-    const transaction: Transaction = {
-      ...insertTransaction,
-      id,
-      timestamp: new Date(),
-    };
-    this.transactions.set(id, transaction);
-    return transaction;
+    const result = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
+    
+    return result[0];
   }
 
   async getUserTransactions(userId: number): Promise<Transaction[]> {
-    return Array.from(this.transactions.values())
-      .filter(transaction => transaction.userId === userId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.timestamp));
   }
 
   async createOtp(insertOtp: InsertOTP): Promise<OTP> {
-    const id = this.otpIdCounter++;
-    const otp: OTP = {
-      ...insertOtp,
-      id,
-      timestamp: new Date(),
-      isUsed: false,
-    };
-    this.otps.set(id, otp);
-    return otp;
+    const result = await db
+      .insert(otps)
+      .values(insertOtp)
+      .returning();
+    
+    return result[0];
   }
 
   async getOtpsByUser(userId: number): Promise<OTP[]> {
-    return Array.from(this.otps.values())
-      .filter(otp => otp.userId === userId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return await db
+      .select()
+      .from(otps)
+      .where(eq(otps.userId, userId))
+      .orderBy(desc(otps.timestamp));
   }
 
   async getActiveOtpByUserAndApp(userId: number, appName: string): Promise<OTP | undefined> {
-    return Array.from(this.otps.values())
-      .filter(otp => otp.userId === userId && otp.appName === appName && !otp.isUsed)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
+    const result = await db
+      .select()
+      .from(otps)
+      .where(
+        and(
+          eq(otps.userId, userId),
+          eq(otps.appName, appName),
+          eq(otps.isUsed, false)
+        )
+      )
+      .orderBy(desc(otps.timestamp))
+      .limit(1);
+    
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+// Export an instance of DatabaseStorage to be used throughout the app
+export const storage = new DatabaseStorage();
