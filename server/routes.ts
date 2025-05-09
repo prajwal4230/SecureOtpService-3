@@ -178,6 +178,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Setup a user as admin (special endpoint, remove or protect in production)
+  app.post("/api/setup-admin", async (req, res) => {
+    try {
+      const schema = z.object({
+        username: z.string().email(),
+      });
+      
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid request body", errors: result.error.errors });
+      }
+      
+      const { username } = result.data;
+      
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Set user as admin
+      const updatedUser = await storage.setUserAsAdmin(user.id, true);
+      
+      res.json({ 
+        success: true, 
+        message: `User ${username} is now an admin`,
+        user: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          name: updatedUser.name,
+          isAdmin: updatedUser.isAdmin
+        }
+      });
+    } catch (error) {
+      console.error("Error setting up admin:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: `Failed to set up admin: ${errorMessage}` });
+    }
+  });
+
   // Admin: Approve balance request
   app.post("/api/admin/balance-requests/:id/approve", requireAdmin, async (req, res) => {
     try {
