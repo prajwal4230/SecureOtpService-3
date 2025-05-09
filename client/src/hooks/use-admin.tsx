@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 
+interface AdminResponse {
+  isAdmin: boolean;
+}
+
 export function useAdmin() {
-  const isAdminQuery = useQuery({
+  const isAdminQuery = useQuery<AdminResponse>({
     queryKey: ['/api/user/is-admin'],
   });
 

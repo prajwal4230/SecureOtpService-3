@@ -168,7 +168,7 @@ function AdminPageContent() {
                             onClick={() => openRejectDialog(request.id)}
                             disabled={rejectBalanceRequestMutation.isPending}
                           >
-                            <LuX className="mr-1 h-4 w-4" />
+                            <X className="mr-1 h-4 w-4" />
                             Reject
                           </Button>
                         </div>
@@ -280,7 +280,5 @@ function AdminPageContent() {
 }
 
 export default function AdminPage() {
-  return (
-    <ProtectedRoute component={AdminPageContent} />
-  );
+  return <AdminPageContent />;
 }
