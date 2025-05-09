@@ -157,7 +157,7 @@ export default function AddBalancePage() {
                             <div className="bg-white p-3 border border-neutral-300 rounded-lg mb-4">
                               <div className="h-64 w-64 flex items-center justify-center">
                                 <img 
-                                  src="/assets/upi_qr_code.jpg" 
+                                  src="/upi_qr_code.jpg" 
                                   alt="UPI QR Code" 
                                   className="h-full w-full object-contain" 
                                 />
