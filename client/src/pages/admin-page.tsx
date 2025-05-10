@@ -238,13 +238,13 @@ function AdminPageContent() {
                       <Skeleton className="h-16 w-full" />
                       <Skeleton className="h-16 w-full" />
                     </div>
-                  ) : allBalanceRequestsQuery.data?.length === 0 ? (
+                  ) : allBalanceRequestsQuery.data && (allBalanceRequestsQuery.data as any[]).length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No balance requests found</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {allBalanceRequestsQuery.data?.map((request: any) => (
+                      {allBalanceRequestsQuery.data && (allBalanceRequestsQuery.data as any[]).map((request: any) => (
                         <Card key={request.id} className="overflow-hidden">
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                             <div>
@@ -311,13 +311,13 @@ function AdminPageContent() {
                       <Skeleton className="h-16 w-full" />
                       <Skeleton className="h-16 w-full" />
                     </div>
-                  ) : openSupportTicketsQuery.data?.length === 0 ? (
+                  ) : openSupportTicketsQuery.data && (openSupportTicketsQuery.data as any[]).length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No open support tickets</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {openSupportTicketsQuery.data?.map((ticket: any) => (
+                      {openSupportTicketsQuery.data && (openSupportTicketsQuery.data as any[]).map((ticket: any) => (
                         <Card key={ticket.id} className="overflow-hidden">
                           <div className="p-4">
                             <div className="flex justify-between items-start mb-3">
@@ -369,13 +369,13 @@ function AdminPageContent() {
                       <Skeleton className="h-16 w-full" />
                       <Skeleton className="h-16 w-full" />
                     </div>
-                  ) : allSupportTicketsQuery.data?.length === 0 ? (
+                  ) : allSupportTicketsQuery.data && (allSupportTicketsQuery.data as any[]).length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No support tickets found</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {allSupportTicketsQuery.data?.map((ticket: any) => (
+                      {allSupportTicketsQuery.data && (allSupportTicketsQuery.data as any[]).map((ticket: any) => (
                         <Card key={ticket.id} className="overflow-hidden">
                           <div className="p-4">
                             <div className="flex justify-between items-start mb-3">
