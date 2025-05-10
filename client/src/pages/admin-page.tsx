@@ -175,13 +175,13 @@ function AdminPageContent() {
                       <Skeleton className="h-16 w-full" />
                       <Skeleton className="h-16 w-full" />
                     </div>
-                  ) : pendingBalanceRequestsQuery.data?.length === 0 ? (
+                  ) : pendingBalanceRequestsQuery.data && (pendingBalanceRequestsQuery.data as any[]).length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No pending balance requests</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {pendingBalanceRequestsQuery.data?.map((request: any) => (
+                      {pendingBalanceRequestsQuery.data && (pendingBalanceRequestsQuery.data as any[]).map((request: any) => (
                         <Card key={request.id} className="overflow-hidden">
                           <div className="p-4 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                             <div className="md:col-span-2">

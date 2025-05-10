@@ -50,13 +50,7 @@ export function useBalanceRequests() {
   // Reject a balance request (admin only)
   const rejectBalanceRequestMutation = useMutation({
     mutationFn: async ({ requestId, reason }: { requestId: number, reason: string }) => {
-      return await apiRequest(
-        `/api/admin/balance-requests/${requestId}/reject`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ reason }),
-        }
-      );
+      return await apiRequest("POST", `/api/admin/balance-requests/${requestId}/reject`, { reason });
     },
     onSuccess: () => {
       toast({
