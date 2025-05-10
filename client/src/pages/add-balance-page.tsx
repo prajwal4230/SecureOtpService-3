@@ -50,10 +50,20 @@ export default function AddBalancePage() {
   const { createBalanceRequestMutation, userBalanceRequestsQuery } = useBalanceRequests();
   
   function onSubmit(values: z.infer<typeof formSchema>) {
-    createBalanceRequestMutation.mutate({
-      amount: Number(values.amount),
-      utrNumber: values.utrNumber
-    });
+    try {
+      console.log("Submitting balance request:", values);
+      createBalanceRequestMutation.mutate({
+        amount: Number(values.amount),
+        utrNumber: values.utrNumber
+      });
+    } catch (error) {
+      console.error("Error submitting balance request:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit balance request. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   if (!user) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center">

@@ -26,12 +26,7 @@ export function useBalanceRequests() {
   // Approve a balance request (admin only)
   const approveBalanceRequestMutation = useMutation({
     mutationFn: async (requestId: number) => {
-      return await apiRequest(
-        `/api/admin/balance-requests/${requestId}/approve`,
-        {
-          method: 'POST',
-        }
-      );
+      return await apiRequest("POST", `/api/admin/balance-requests/${requestId}/approve`);
     },
     onSuccess: () => {
       toast({
@@ -84,13 +79,7 @@ export function useBalanceRequests() {
   // Create a new balance request
   const createBalanceRequestMutation = useMutation({
     mutationFn: async (data: { amount: number, utrNumber: string }) => {
-      return await apiRequest(
-        '/api/add-balance',
-        {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }
-      );
+      return await apiRequest("POST", "/api/add-balance", data);
     },
     onSuccess: () => {
       toast({
