@@ -3,7 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
-import { insertTransactionSchema, insertOtpSchema, insertBalanceRequestSchema } from "@shared/schema";
+import { 
+  insertTransactionSchema, 
+  insertOtpSchema, 
+  insertBalanceRequestSchema,
+  insertSupportTicketSchema 
+} from "@shared/schema";
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
@@ -272,6 +277,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching user balance requests:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       res.status(500).json({ message: `Failed to fetch user balance requests: ${errorMessage}` });
+    }
+  });
+  
+  // Support Tickets Routes
+  app.get("/api/support-tickets", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const tickets = await storage.getAllSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: `Failed to fetch support tickets: ${errorMessage}` });
+    }
+  });
+  
+  app.get("/api/support-tickets/open", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const tickets = await storage.getOpenSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching open support tickets:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: `Failed to fetch open support tickets: ${errorMessage}` });
+    }
+  });
+  
+  app.get("/api/user/support-tickets", requireAuth, async (req, res) => {
+    try {
+      const tickets = await storage.getSupportTicketsByUser(req.user!.id);
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching user support tickets:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: `Failed to fetch user support tickets: ${errorMessage}` });
+    }
+  });
+  
+  app.post("/api/support-tickets", requireAuth, async (req, res) => {
+    try {
+      const schema = z.object({
+        subject: z.string().min(5).max(100),
+        message: z.string().min(10)
+      });
+      
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid request body", errors: result.error.errors });
+      }
+      
+      const { subject, message } = result.data;
+      
+      const ticket = await storage.createSupportTicket({
+        userId: req.user!.id,
+        subject,
+        message,
+      });
+      
+      res.status(201).json({ success: true, ticket });
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: `Failed to create support ticket: ${errorMessage}` });
+    }
+  });
+  
+  app.post("/api/support-tickets/:id/respond", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const schema = z.object({
+        response: z.string().min(5)
+      });
+      
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid request body", errors: result.error.errors });
+      }
+      
+      const { response } = result.data;
+      const ticketId = parseInt(req.params.id);
+      
+      if (isNaN(ticketId)) {
+        return res.status(400).json({ message: "Invalid ticket ID" });
+      }
+      
+      const ticket = await storage.respondToSupportTicket(ticketId, req.user!.id, response);
+      res.json({ success: true, ticket });
+    } catch (error) {
+      console.error("Error responding to support ticket:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: `Failed to respond to support ticket: ${errorMessage}` });
     }
   });
 
