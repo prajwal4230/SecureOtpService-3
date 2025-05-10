@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Check, Clock, MessageSquare, X } from "lucide-react";
+import { AlertCircle, Check, Clock, MessageSquare, X, Search, Mail, FileText } from "lucide-react";
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -202,18 +202,27 @@ function AdminPageContent() {
                                 size="sm" 
                                 onClick={() => handleApprove(request.id)} 
                                 disabled={approveBalanceRequestMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700"
                               >
                                 <Check className="mr-1 h-4 w-4" />
                                 Approve
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant="destructive" 
                                 size="sm" 
                                 onClick={() => openRejectDialog(request.id)}
                                 disabled={rejectBalanceRequestMutation.isPending}
                               >
                                 <X className="mr-1 h-4 w-4" />
                                 Reject
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => window.open(`https://www.npci.org.in/what-we-do/upi/upi-ecosystem-statistics`, '_blank')}
+                              >
+                                <Search className="mr-1 h-4 w-4" />
+                                Verify UTR
                               </Button>
                             </div>
                           </div>
@@ -338,13 +347,34 @@ function AdminPageContent() {
                             <div className="bg-muted p-3 rounded-md mb-4">
                               <p className="whitespace-pre-wrap">{ticket.message}</p>
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex gap-2 justify-end">
                               <Button 
                                 onClick={() => openResponseDialog(ticket.id)}
                                 disabled={respondToTicketMutation.isPending}
+                                className="bg-blue-600 hover:bg-blue-700"
                               >
                                 <MessageSquare className="mr-2 h-4 w-4" />
                                 Respond
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setTicketResponse("Thank you for contacting our support team. We've reviewed your issue and...");
+                                  openResponseDialog(ticket.id);
+                                }}
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Quick Response
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                onClick={() => {
+                                  const url = `mailto:${ticket.userId}@user.com?subject=RE: ${ticket.subject}&body=Dear User,%0D%0A%0D%0ARegarding your ticket about "${ticket.subject}":%0D%0A%0D%0A`;
+                                  window.open(url, '_blank');
+                                }}
+                              >
+                                <Mail className="mr-2 h-4 w-4" />
+                                Email User
                               </Button>
                             </div>
                           </div>
@@ -450,6 +480,36 @@ function AdminPageContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setRejectionReason("Invalid UTR number provided.")}
+              >
+                Invalid UTR
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setRejectionReason("The transaction could not be verified.")}
+              >
+                Unverified Transaction
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setRejectionReason("The amount in the transaction does not match the requested amount.")}
+              >
+                Amount Mismatch
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setRejectionReason("The transaction is older than 24 hours.")}
+              >
+                Expired Transaction
+              </Button>
+            </div>
             <Textarea
               placeholder="Enter rejection reason..."
               value={rejectionReason}
@@ -464,6 +524,7 @@ function AdminPageContent() {
             <Button 
               onClick={handleReject} 
               disabled={!rejectionReason.trim() || rejectBalanceRequestMutation.isPending}
+              variant="destructive"
             >
               Confirm Rejection
             </Button>
@@ -473,7 +534,7 @@ function AdminPageContent() {
       
       {/* Ticket Response Dialog */}
       <Dialog open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Respond to Support Ticket</DialogTitle>
             <DialogDescription>
@@ -481,6 +542,32 @@ function AdminPageContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setTicketResponse(prev => prev + "\n\nWe apologize for the inconvenience caused. Our team is working to resolve this issue as quickly as possible.")}
+              >
+                Add Apology
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setTicketResponse(prev => prev + "\n\nFor further assistance, please contact our customer support team at support@otpservice.com.")}
+              >
+                Add Contact Info
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setTicketResponse(prev => prev + "\n\nWe have added ₹10 credit to your account as a goodwill gesture.")}
+              >
+                Add Goodwill Credit
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setTicketResponse(prev => prev + "\n\nThank you for bringing this to our attention. We value your feedback and continuously work to improve our services.")}
+              >
+                Add Thank You
+              </Button>
+            </div>
             <Textarea
               placeholder="Enter your response..."
               value={ticketResponse}
@@ -495,6 +582,7 @@ function AdminPageContent() {
             <Button 
               onClick={handleRespondToTicket} 
               disabled={!ticketResponse.trim() || respondToTicketMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               Submit Response
             </Button>
