@@ -35,6 +35,24 @@ export const insertBalanceRequestSchema = createInsertSchema(balanceRequests).pi
   utrNumber: true,
 });
 
+export const supportTickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  status: text("status").notNull().default('open'), // 'open', 'closed'
+  response: text("response"),
+  respondedBy: integer("responded_by").references(() => users.id),
+  respondedAt: timestamp("responded_at"),
+});
+
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).pick({
+  userId: true,
+  subject: true,
+  message: true,
+});
+
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -80,3 +98,5 @@ export type OTP = typeof otps.$inferSelect;
 export type InsertOTP = z.infer<typeof insertOtpSchema>;
 export type BalanceRequest = typeof balanceRequests.$inferSelect;
 export type InsertBalanceRequest = z.infer<typeof insertBalanceRequestSchema>;
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;

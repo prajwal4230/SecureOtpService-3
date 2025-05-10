@@ -2,7 +2,8 @@ import {
   users, type User, type InsertUser, 
   transactions, type Transaction, type InsertTransaction, 
   otps, type OTP, type InsertOTP,
-  balanceRequests, type BalanceRequest, type InsertBalanceRequest
+  balanceRequests, type BalanceRequest, type InsertBalanceRequest,
+  supportTickets, type SupportTicket, type InsertSupportTicket
 } from "@shared/schema";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -29,6 +30,13 @@ export interface IStorage {
   getBalanceRequestsByUser(userId: number): Promise<BalanceRequest[]>;
   approveBalanceRequest(requestId: number, adminId: number): Promise<BalanceRequest>;
   rejectBalanceRequest(requestId: number, adminId: number, reason: string): Promise<BalanceRequest>;
+  
+  // Support ticket operations
+  createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket>;
+  getAllSupportTickets(): Promise<SupportTicket[]>;
+  getOpenSupportTickets(): Promise<SupportTicket[]>;
+  getSupportTicketsByUser(userId: number): Promise<SupportTicket[]>;
+  respondToSupportTicket(ticketId: number, adminId: number, response: string): Promise<SupportTicket>;
   
   // Transaction operations
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
@@ -283,6 +291,76 @@ export class DatabaseStorage implements IStorage {
     
     if (!result[0]) {
       throw new Error(`Failed to reject balance request with ID ${requestId}`);
+    }
+    
+    return result[0];
+  }
+
+  // Support ticket methods
+  async createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket> {
+    const result = await db
+      .insert(supportTickets)
+      .values(ticket)
+      .returning();
+    
+    return result[0];
+  }
+
+  async getAllSupportTickets(): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .orderBy(desc(supportTickets.timestamp));
+  }
+
+  async getOpenSupportTickets(): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.status, 'open'))
+      .orderBy(desc(supportTickets.timestamp));
+  }
+
+  async getSupportTicketsByUser(userId: number): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.timestamp));
+  }
+
+  async respondToSupportTicket(ticketId: number, adminId: number, response: string): Promise<SupportTicket> {
+    // First get the ticket to check its status
+    const ticketsResult = await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.id, ticketId));
+    
+    if (!ticketsResult[0]) {
+      throw new Error(`Support ticket with ID ${ticketId} not found`);
+    }
+    
+    const ticket = ticketsResult[0];
+    
+    if (ticket.status !== 'open') {
+      throw new Error(`Support ticket with ID ${ticketId} is already closed`);
+    }
+    
+    // Update the ticket with response
+    const now = new Date();
+    const result = await db
+      .update(supportTickets)
+      .set({ 
+        status: 'closed',
+        respondedBy: adminId,
+        respondedAt: now,
+        response: response
+      })
+      .where(eq(supportTickets.id, ticketId))
+      .returning();
+    
+    if (!result[0]) {
+      throw new Error(`Failed to respond to support ticket with ID ${ticketId}`);
     }
     
     return result[0];
