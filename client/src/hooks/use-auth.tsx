@@ -139,8 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest("POST", "/api/register", userData);
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/register", userData);
+        return await res.json();
+      } catch (error) {
+        console.error("Registration error:", error);
+        throw error;
+      }
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -151,9 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.href = "/dashboard";
     },
     onError: (error: Error) => {
+      console.error("Registration error in onError:", error);
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "An error occurred during registration",
         variant: "destructive",
       });
     },
@@ -163,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async () => {
       // Log out from both Firebase and our backend
       await signOutUser();
-      await apiRequest("POST", "/api/logout");
+      await apiRequest("POST", "/api/logout", null);
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);

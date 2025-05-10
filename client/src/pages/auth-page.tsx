@@ -119,7 +119,11 @@ function LoginForm({ setActiveTab }: FormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    loginMutation.mutate(values);
+    try {
+      loginMutation.mutate(values);
+    } catch (error) {
+      console.error("Error in login form submission:", error);
+    }
   }
 
   return (
@@ -221,7 +225,11 @@ function SignupForm({ setActiveTab }: FormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof registerSchema>) {
-    registerMutation.mutate(values);
+    try {
+      registerMutation.mutate(values);
+    } catch (error) {
+      console.error("Error in signup form submission:", error);
+    }
   }
 
   return (
